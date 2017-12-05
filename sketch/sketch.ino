@@ -45,9 +45,9 @@ SSD1306AsciiAvrI2c oled;                  // create short alias
 #define TIMER_STOP  TCCR1B &= ~((1 << CS12) | (1 << CS11) | (1 << CS10)); // deletes bits
 
 
-float liter_start = 0.4;                  // set some start values
+float liter_start = 0.25;                 // set some start values
 float liter;
-float ppm = 50;                           // wished ppm
+float ppm = 25;                           // wished ppm
 float strom = 10;                         // current
 
 boolean polaritaet = true;
@@ -58,7 +58,7 @@ char text[32];
 
 int kszeit;
 unsigned int taste, i, eine_minute, Position, adc_wert, adc_wert_a1;
-unsigned int polwechselzeit = 15;
+unsigned int polwechselzeit = 10;
 float spannung;
 float strom_mess;
 float strom_wassertest;                   // current measurement for water quality test
@@ -289,7 +289,7 @@ ISR(TIMER1_COMPA_vect) {                  // Interrupt Routine every 1 sec
     oled.print(" ppm    ");
     oled.setCursor(18, 4);                 // Oled 3. row
     if (lese_tasten() == 2) {
-      oled.print((int)(spannung * 64.84)); // factor measured voltage divider
+      oled.print((int)(spannung * 72.04)); // factor measured voltage divider
       oled.print(" Volt      ");
 
     } else {
@@ -384,7 +384,7 @@ void loop() {
     } while (lese_tasten() != 4);
     biep();
 
-    ppm = 50;                             // choose ppm
+    ppm = 25;                             // choose ppm
     print_ppm(ppm);
     do {
       if (lese_tasten() == 1) {
@@ -522,7 +522,7 @@ void loop() {
   do {                                      // Wait loop until any key is pressed
     taste = lese_tasten();
   } while (taste != 4 && taste != 2 && taste != 1);
-  Q_gesamt = 0; i = 0; sek = 0; stunde = 0; minute = 0; zielmasse = 0; masse = 0; polwechselzeit = 15; display = true; // Reset counter
+  Q_gesamt = 0; i = 0; sek = 0; stunde = 0; minute = 0; zielmasse = 0; masse = 0; polwechselzeit = 10; display = true; // Reset counter
   delay(1000);
 }
 
