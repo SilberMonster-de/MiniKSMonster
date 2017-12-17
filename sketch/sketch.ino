@@ -137,9 +137,9 @@ void setup() {
 if (eepromtest == 1) {
   eeAddress += sizeof(float);
   liter = EEPROM.get(eeAddress, liter);
-  eeAddress += sizeof(float); //Move address to the next byte after float 'ppm'.
+  eeAddress += sizeof(float);
   ppm = EEPROM.get(eeAddress, ppm);
-  eeAddress += sizeof(float); //Move address to the next byte after float 'liter'.
+  eeAddress += sizeof(float);
   polwechselzeit = EEPROM.get(eeAddress, polwechselzeit);
 }
 }
@@ -468,9 +468,9 @@ void loop() {
     EEPROM.write(0, 1);
     eeAddress += sizeof(float);
     EEPROM.put(eeAddress, liter);
-    eeAddress += sizeof(float); //Move address to the next byte after float 'ppm'.
+    eeAddress += sizeof(float);
     EEPROM.put(eeAddress, ppm);
-    eeAddress += sizeof(float); //Move address to the next byte after float 'liter'.
+    eeAddress += sizeof(float);
     EEPROM.put(eeAddress, polwechselzeit);
  
     kszeit = zeit(liter, strom, ppm);       // calc. KS time
