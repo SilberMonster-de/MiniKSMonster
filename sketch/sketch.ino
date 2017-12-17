@@ -25,9 +25,12 @@
 // MarkusW - 16.10.2017 set analog Reference to external 2.5V
 // MarkusW - 23.10.2017 added screen protection and kick out no longer required code
 // MarkusW - 28.10.2017 added filter for current measurement
+// MarkusW - 17.12.2017 added EEPROM support
 
 #include "SSD1306Ascii.h"                 // ascii library for Oled
 #include "SSD1306AsciiAvrI2c.h"
+
+#include <EEPROM.h>                       // EEPROM library
 
 #define I2C_ADDRESS 0x3C                  // 0X3C+SA0 - 0x3C or 0x3D
 
@@ -44,9 +47,7 @@ SSD1306AsciiAvrI2c oled;                  // create short alias
 #define TIMER_START TCCR1B |= (1 << CS12) | (0 << CS11) | (0 << CS10); // set bits
 #define TIMER_STOP  TCCR1B &= ~((1 << CS12) | (1 << CS11) | (1 << CS10)); // deletes bits
 
-
-float liter_start = 0.25;                 // set some start values
-float liter;
+float liter = 0.25;                       // set some start values
 float ppm = 25;                           // wished ppm
 float strom = 10;                         // current
 
@@ -129,6 +130,18 @@ void setup() {
   delay(2000);                            // 2 sec. are enough
 
   analogReference(EXTERNAL);              // analog Reference external 2.5V
+
+  int eeAddress = 0;                      // read EEPROM
+  int eepromtest = 0;
+  eepromtest = EEPROM.read(0);
+if (eepromtest == 1) {
+  eeAddress += sizeof(float);
+  liter = EEPROM.get(eeAddress, liter);
+  eeAddress += sizeof(float); //Move address to the next byte after float 'ppm'.
+  ppm = EEPROM.get(eeAddress, ppm);
+  eeAddress += sizeof(float); //Move address to the next byte after float 'liter'.
+  polwechselzeit = EEPROM.get(eeAddress, polwechselzeit);
+}
 }
 
 uint8_t lese_tasten(void) {               // function reads switches and returns 1-7
@@ -289,7 +302,7 @@ ISR(TIMER1_COMPA_vect) {                  // Interrupt Routine every 1 sec
     oled.print(" ppm    ");
     oled.setCursor(18, 4);                 // Oled 3. row
     if (lese_tasten() == 2) {
-      oled.print((int)(spannung * 72.04)); // factor measured voltage divider
+      oled.print((int)(spannung * 67.76)); // factor measured voltage divider
       oled.print(" Volt      ");
 
     } else {
@@ -347,7 +360,6 @@ void biep2(void) {
 // *** M A I N L O O P ***
 void loop() {
   do {                                    // back to loop
-    liter = liter_start;                  // Reset for new loop/start
     print_wassermenge(liter);
     do {                                  // choose amout of water
       if (lese_tasten() == 1) {
@@ -384,7 +396,6 @@ void loop() {
     } while (lese_tasten() != 4);
     biep();
 
-    ppm = 25;                             // choose ppm
     print_ppm(ppm);
     do {
       if (lese_tasten() == 1) {
@@ -452,7 +463,16 @@ void loop() {
       }
     } while (lese_tasten() != 4);
     biep();
-
+    
+    int eeAddress = 0;                      // write EEPROM
+    EEPROM.write(0, 1);
+    eeAddress += sizeof(float);
+    EEPROM.put(eeAddress, liter);
+    eeAddress += sizeof(float); //Move address to the next byte after float 'ppm'.
+    EEPROM.put(eeAddress, ppm);
+    eeAddress += sizeof(float); //Move address to the next byte after float 'liter'.
+    EEPROM.put(eeAddress, polwechselzeit);
+ 
     kszeit = zeit(liter, strom, ppm);       // calc. KS time
     oled.clear();
     delay(1000);
