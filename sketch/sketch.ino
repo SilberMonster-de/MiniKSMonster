@@ -131,11 +131,10 @@ void setup() {
 
   analogReference(EXTERNAL);              // analog Reference external 2.5V
 
-  int eeAddress = 0;                      // read EEPROM
+  int eeAddress = 1;                      // read EEPROM
   int eepromtest = 0;
   eepromtest = EEPROM.read(0);
 if (eepromtest == 1) {
-  eeAddress += sizeof(float);
   liter = EEPROM.get(eeAddress, liter);
   eeAddress += sizeof(float);
   ppm = EEPROM.get(eeAddress, ppm);
@@ -177,10 +176,10 @@ void print_wassermenge(float liter) {     // 1. display output - amount of water
   oled.clear();
   oled.setCursor(3, 0);
   oled.print("Wassermenge");
-  oled.setCursor(5, 4);
-  oled.print("     Liter");
   oled.setCursor(8, 4);
   oled.print(liter);
+  oled.print(" Liter");
+
 }
 
 void print_ppm(float ppm) {               // 2. display output - wished ppm
@@ -196,10 +195,9 @@ void print_polw(unsigned int polwechselzeit) {
   oled.clear();                           // 3. display output - change polarioty time
   oled.setCursor(4, 0);
   oled.print(" Umpolzeit");
-  oled.setCursor(4, 4);
-  oled.print("     Sek.");
   oled.setCursor(26, 4);
   oled.print(polwechselzeit);
+  oled.print(" Sek.");
 }
 void print_wassertest(void) {             // 4. display output - water quality test and Start question
   oled.clear();
@@ -374,7 +372,7 @@ void loop() {
         biep();
       }
       if (lese_tasten() == 2) {
-        if (liter > 0.06)
+        if (liter > 0.05)
           if (liter < 0.80) {
             liter -= 0.01 ;
           } else {
@@ -464,9 +462,8 @@ void loop() {
     } while (lese_tasten() != 4);
     biep();
     
-    int eeAddress = 0;                      // write EEPROM
+    int eeAddress = 1;                      // write EEPROM
     EEPROM.write(0, 1);
-    eeAddress += sizeof(float);
     EEPROM.put(eeAddress, liter);
     eeAddress += sizeof(float);
     EEPROM.put(eeAddress, ppm);
