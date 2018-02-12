@@ -26,6 +26,7 @@
 // MarkusW - 23.10.2017 added screen protection and kick out no longer required code
 // MarkusW - 28.10.2017 added filter for current measurement
 // MarkusW - 17.12.2017 added EEPROM support
+// MarkusW - 12.02.2018 added second polarity change for faster speed in cold water
 
 #include "SSD1306Ascii.h"                 // ascii library for Oled
 #include "SSD1306AsciiAvrI2c.h"
@@ -48,7 +49,7 @@ SSD1306AsciiAvrI2c oled;                  // create short alias
 #define TIMER_STOP  TCCR1B &= ~((1 << CS12) | (1 << CS11) | (1 << CS10)); // deletes bits
 
 float liter = 0.25;                       // set some start values
-float ppm = 25;                           // wished ppm
+float ppm = 50;                           // wished ppm
 float strom = 10;                         // current
 
 boolean polaritaet = true;
@@ -59,7 +60,10 @@ char text[32];
 
 int kszeit;
 unsigned int taste, i, eine_minute, Position, adc_wert, adc_wert_a1;
-unsigned int polwechselzeit = 10;
+unsigned int polwechselzeit1 = 30;
+unsigned int polwechselzeit2 = 10;
+unsigned int polwechselzeit;
+float polwechselschwelle = 4.5;
 float spannung;
 float strom_mess;
 float strom_wassertest;                   // current measurement for water quality test
@@ -134,13 +138,17 @@ void setup() {
   int eeAddress = 1;                      // read EEPROM
   int eepromtest = 0;
   eepromtest = EEPROM.read(0);
-if (eepromtest == 1) {
-  liter = EEPROM.get(eeAddress, liter);
-  eeAddress += sizeof(float);
-  ppm = EEPROM.get(eeAddress, ppm);
-  eeAddress += sizeof(float);
-  polwechselzeit = EEPROM.get(eeAddress, polwechselzeit);
-}
+  if (eepromtest == 1) {
+    liter = EEPROM.get(eeAddress, liter);
+    eeAddress += sizeof(float); //Move address to the next byte after float 'liter'.
+    ppm = EEPROM.get(eeAddress, ppm);
+    eeAddress += sizeof(float); //Move address to the next byte after float 'ppm'.
+    polwechselzeit1 = EEPROM.get(eeAddress, polwechselzeit1);
+    eeAddress += sizeof(unsigned int); //Move address to the next byte after unsigned int 'polwechselzeit1'.
+    polwechselzeit2 = EEPROM.get(eeAddress, polwechselzeit2);
+    eeAddress += sizeof(unsigned int); //Move address to the next byte after unsigned int 'polwechselzeit2'.
+    polwechselschwelle = EEPROM.get(eeAddress, polwechselschwelle);
+  }
 }
 
 uint8_t lese_tasten(void) {               // function reads switches and returns 1-7
@@ -191,15 +199,33 @@ void print_ppm(float ppm) {               // 2. display output - wished ppm
   oled.print(" ppm ");
 }
 
-void print_polw(unsigned int polwechselzeit) {
+void print_polw1(unsigned int polwechselzeit1) {
   oled.clear();                           // 3. display output - change polarioty time
   oled.setCursor(4, 0);
-  oled.print(" Umpolzeit");
+  oled.print("Umpolzeit 1");
   oled.setCursor(26, 4);
-  oled.print(polwechselzeit);
+  oled.print(polwechselzeit1);
   oled.print(" Sek.");
 }
-void print_wassertest(void) {             // 4. display output - water quality test and Start question
+
+void print_schwelle(float polwechselschwelle) {
+  oled.clear();                           // 4. display output - change polarioty time
+  oled.setCursor(4, 0);
+  oled.print(" Schwelle");
+  oled.setCursor(26, 4);
+  oled.print(polwechselschwelle);
+  oled.print(" mA");
+}
+
+void print_polw2(unsigned int polwechselzeit2) {
+  oled.clear();                           // 5. display output - change polarioty time
+  oled.setCursor(4, 0);
+  oled.print("Umpolzeit 2");
+  oled.setCursor(26, 4);
+  oled.print(polwechselzeit2);
+  oled.print(" Sek.");
+}
+void print_wassertest(void) {             // 6. display output - water quality test and Start question
   oled.clear();
 
   if (wassertest) {
@@ -323,6 +349,14 @@ ISR(TIMER1_COMPA_vect) {                  // Interrupt Routine every 1 sec
   } else {
     display = true;
   }
+  if (strom_mess < polwechselschwelle)
+    {
+      polwechselzeit = polwechselzeit1;
+    }
+    else
+    {
+      polwechselzeit = polwechselzeit2;
+    }
   if (!(i % (polwechselzeit)))             // Polarity change every 15 sec./ basis time
   { polaritaet = !polaritaet;
     digitalWrite(START, HIGH);
@@ -339,17 +373,17 @@ ISR(TIMER1_COMPA_vect) {                  // Interrupt Routine every 1 sec
     }
   }
   sek++;
-  i++;                                    // intervall x i = total time
+  i++;                                     // intervall x i = total time
 }
 
 void biep(void) {
-  tone(AUDIO, 2600);                      // beep
+  tone(AUDIO, 2600);                       // beep
   delay(50);
   noTone(AUDIO);
 }
 
 void biep2(void) {
-  tone(AUDIO, 2600);                      // beep2
+  tone(AUDIO, 2600);                       // beep2
   delay(1000);
   noTone(AUDIO);
   delay(400);
@@ -357,9 +391,9 @@ void biep2(void) {
 
 // *** M A I N L O O P ***
 void loop() {
-  do {                                    // back to loop
+  do {                                     // back to loop
     print_wassermenge(liter);
-    do {                                  // choose amout of water
+    do {                                   // choose amout of water
       if (lese_tasten() == 1) {
         if (liter < 5.00)
           if (liter <= 0.79) {
@@ -432,21 +466,21 @@ void loop() {
     } while (lese_tasten() != 4);
     biep();
 
-    print_polw(polwechselzeit);
-    do {                                  // choose polarity change time
+print_polw1(polwechselzeit1);
+    do {                                   // choose polarity change time
       if (lese_tasten() == 1) {
-        if (polwechselzeit < 600)         // top max. 600 sec = 10 Min
-          polwechselzeit += 1 ;
+        if (polwechselzeit1 < 600)         // top max. 600 sec = 10 Min
+          polwechselzeit1 += 1 ;
         oled.setCursor(26, 4);
-        oled.print(polwechselzeit);
+        oled.print(polwechselzeit1);
         oled.print(" Sek. ");
         biep();
       }
       if (lese_tasten() == 2) {
-        if (polwechselzeit)               // bottom min.
-          polwechselzeit -= 1 ;
+        if (polwechselzeit1)               // bottom min.
+          polwechselzeit1 -= 1 ;
         oled.setCursor(26, 4);
-        oled.print(polwechselzeit);
+        oled.print(polwechselzeit1);
         oled.print(" Sek. ");
         biep();
       }
@@ -462,18 +496,82 @@ void loop() {
     } while (lese_tasten() != 4);
     biep();
     
-    int eeAddress = 1;                      // write EEPROM
+    print_schwelle(polwechselschwelle);
+    do {                                   // choose polarity change time
+      if (lese_tasten() == 1) {
+        if (polwechselschwelle < 10)       // top max. 10mA
+          polwechselschwelle += 0.1 ;
+        oled.setCursor(26, 4);
+        oled.print(polwechselschwelle);
+        oled.print(" mA ");
+        biep();
+      }
+      if (lese_tasten() == 2) {
+        if (polwechselschwelle)            // bottom min.
+          polwechselschwelle -= 0.1 ;
+        oled.setCursor(26, 4);
+        oled.print(polwechselschwelle);
+        oled.print(" mA ");
+        biep();
+      }
+      unsigned long currentMillis = millis();
+      if ((unsigned long)(currentMillis - previousMillis) >= interval) {
+        delay(50);
+        if (lese_tasten() == 0) {
+          previousMillis = currentMillis;
+        }
+      } else {
+        delay(300);
+      }
+    } while (lese_tasten() != 4);
+    biep();
+    
+    print_polw2(polwechselzeit2);
+    do {                                  // choose polarity change time
+      if (lese_tasten() == 1) {
+        if (polwechselzeit2 < 600)        // top max. 600 sec = 10 Min
+          polwechselzeit2 += 1 ;
+        oled.setCursor(26, 4);
+        oled.print(polwechselzeit2);
+        oled.print(" Sek. ");
+        biep();
+      }
+      if (lese_tasten() == 2) {
+        if (polwechselzeit2)              // bottom min.
+          polwechselzeit2 -= 1 ;
+        oled.setCursor(26, 4);
+        oled.print(polwechselzeit2);
+        oled.print(" Sek. ");
+        biep();
+      }
+      unsigned long currentMillis = millis();
+      if ((unsigned long)(currentMillis - previousMillis) >= interval) {
+        delay(50);
+        if (lese_tasten() == 0) {
+          previousMillis = currentMillis;
+        }
+      } else {
+        delay(300);
+      }
+    } while (lese_tasten() != 4);
+    biep();
+    
+    int eeAddress = 1;                    // write EEPROM
     EEPROM.write(0, 1);
     EEPROM.put(eeAddress, liter);
-    eeAddress += sizeof(float);
+    eeAddress += sizeof(float); //Move address to the next byte after float 'liter'.
     EEPROM.put(eeAddress, ppm);
-    eeAddress += sizeof(float);
-    EEPROM.put(eeAddress, polwechselzeit);
- 
-    kszeit = zeit(liter, strom, ppm);       // calc. KS time
+    eeAddress += sizeof(float); //Move address to the next byte after float 'ppm'.
+    EEPROM.put(eeAddress, polwechselzeit1);
+    eeAddress += sizeof(unsigned int); //Move address to the next byte after float 'polwechselzeit1'.
+    EEPROM.put(eeAddress, polwechselzeit2);
+    eeAddress += sizeof(unsigned int); //Move address to the next byte after float 'polwechselzeit2'.
+    EEPROM.put(eeAddress, polwechselschwelle);
+    
+    kszeit = zeit(liter, strom, ppm);     // calc. KS time
     oled.clear();
     delay(1000);
-    do {                                    // last user check
+    do {                                  // last user check
       oled.setCursor(8, 0);
       oled.print((int)strom);
       oled.print(" mA");
@@ -487,15 +585,15 @@ void loop() {
       oled.print(liter);
       oled.print(" Liter");
       taste = lese_tasten();
-      zweiSekunden();                       // delay against flickering display but read keys
+      zweiSekunden();                     // delay against flickering display but read keys
     } while (taste != 4 && taste != 2 && taste != 1); //action if key hit, leave while loop
     biep();
-  } while ( taste != 4 && taste != 2);      // only **not** back, if 4 == go further
+  } while ( taste != 4 && taste != 2);    // only **not** back, if 4 == go further
 
   delay(1000);
-  print_wassertest();                       // water quality test and Start question
+  print_wassertest();                     // water quality test and Start question
   do {
-    taste = lese_tasten();                  // go futher, on every key
+    taste = lese_tasten();                // go futher, on every key
   } while (taste != 4);
   biep();
 
@@ -536,10 +634,10 @@ void loop() {
       break;
   }
 
-  do {                                      // Wait loop until any key is pressed
+  do {                                    // Wait loop until any key is pressed
     taste = lese_tasten();
   } while (taste != 4 && taste != 2 && taste != 1);
-  Q_gesamt = 0; i = 0; sek = 0; stunde = 0; minute = 0; zielmasse = 0; masse = 0; polwechselzeit = 10; display = true; // Reset counter
+  Q_gesamt = 0; i = 0; sek = 0; stunde = 0; minute = 0; zielmasse = 0; masse = 0; display = true; // Reset counter
   delay(1000);
 }
 
