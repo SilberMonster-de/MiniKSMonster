@@ -60,10 +60,10 @@ char text[32];
 
 int kszeit;
 unsigned int taste, i, eine_minute, Position, adc_wert, adc_wert_a1;
-unsigned int polwechselzeit1 = 30;
+unsigned int polwechselzeit1 = 15;
 unsigned int polwechselzeit2 = 10;
 unsigned int polwechselzeit;
-float polwechselschwelle = 4.5;
+float polwechselschwelle = 2.5;
 float spannung;
 float strom_mess;
 float strom_wassertest;                   // current measurement for water quality test
