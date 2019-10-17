@@ -8,25 +8,6 @@
                 Creative Commons, 171 Second Street, Suite 300, San Francisco, California, 94105, USA.
 
 ********************************************/
-// PetS - 09.06.2017 - kick out music and no longer required code
-// some cosmetical changes of the descriptions/remarks
-// FUNCTION zweiSekunden() may be wrong because delay works not correct
-// PetS - 10.06.2017 - longer polarity change (max. 5 Min.)
-// MarkusW - 12.09.2017 - longer polarity change (max. 10 Min.)
-// wished polarity change in seconds
-// wished liters area (min/max liters 0.05/5.00)
-// wished ppm steps <20 now 1 instead of 5 and max wished ppm is 1000
-// disable software_Reset
-// MarkusW - 15.09.2017 added water quality test
-// MarkusW - 18.09.2017 wished liters steps <0.40 now 0.01 instead of 0.05
-// disable water quality test
-// MarkusW - 26.09.2017 wished liters steps <0.80 now 0.01 instead of 0.05
-// MarkusW - 13.10.2017 improved operation: if pressed longer than 5 seconds faster selection speed
-// MarkusW - 16.10.2017 set analog Reference to external 2.5V
-// MarkusW - 23.10.2017 added screen protection and kick out no longer required code
-// MarkusW - 28.10.2017 added filter for current measurement
-// MarkusW - 17.12.2017 added EEPROM support
-// MarkusW - 12.02.2018 added second polarity change for faster speed in cold water
 
 #include "SSD1306Ascii.h"                 // ascii library for Oled
 #include "SSD1306AsciiAvrI2c.h"
@@ -50,7 +31,6 @@ SSD1306AsciiAvrI2c oled;                  // create short alias
 
 float liter = 0.25;                       // set some start values
 float ppm = 50;                           // wished ppm
-float strom = 10;                         // current
 
 boolean polaritaet = true;
 boolean wassertest = false;               // water quality test default is disable
@@ -58,7 +38,6 @@ boolean display = true;                   // display enable
 float akt_ppm = 0;
 char text[32];
 
-int kszeit;
 unsigned int taste, i, eine_minute, Position, adc_wert, adc_wert_a1;
 unsigned int polwechselzeit1 = 15;
 unsigned int polwechselzeit2 = 10;
@@ -161,23 +140,6 @@ uint8_t lese_tasten(void) {               // function reads switches and returns
     zwi_speich += 4;
   return zwi_speich;
 
-}
-/*
-  Function for calculating KS time
-  m = M * I * t / (z * F)
-  m = Mass of the substance
-  M = molar Mass Ag 107.8682 g/mol
-  i = Current in MilliAmpere
-  t = Time in Sec
-  z = charge number Ag ist 1
-  f = Faraday-constant
-*/
-const float  M = 107.87;
-const float  z = 1.0;
-const float  f = 96485.0;
-int zeit(float liter, float strom, float ppm)
-{
-  return (int) ((13400 * ((M / (strom * z * f)) * liter * ppm )) + 0.5); // plus 0.5 to round !(int) cuts off
 }
 
 void print_wassermenge(float liter) {     // 1. display output - amount of water
@@ -568,22 +530,20 @@ print_polw1(polwechselzeit1);
     eeAddress += sizeof(unsigned int); //Move address to the next byte after float 'polwechselzeit2'.
     EEPROM.put(eeAddress, polwechselschwelle);
     
-    kszeit = zeit(liter, strom, ppm);     // calc. KS time
     oled.clear();
     delay(1000);
     do {                                  // last user check
-      oled.setCursor(8, 0);
-      oled.print((int)strom);
-      oled.print(" mA");
-      oled.setCursor(8, 2);
+      oled.setCursor(0, 0);
       oled.print((int)ppm);
       oled.print(" ppm");
-      oled.setCursor(8, 4);
-      oled.print(kszeit);
-      oled.print(" Minuten");
-      oled.setCursor(8, 6);
+      oled.setCursor(0, 2);
       oled.print(liter);
       oled.print(" Liter");
+      oled.setCursor(0, 4);
+      oled.print((int)ppm/5);
+      oled.print(" mg/L");
+      oled.setCursor(0, 6);
+      oled.print("Wasser kalt");
       taste = lese_tasten();
       zweiSekunden();                     // delay against flickering display but read keys
     } while (taste != 4 && taste != 2 && taste != 1); //action if key hit, leave while loop
@@ -640,5 +600,3 @@ print_polw1(polwechselzeit1);
   Q_gesamt = 0; i = 0; sek = 0; stunde = 0; minute = 0; zielmasse = 0; masse = 0; display = true; // Reset counter
   delay(1000);
 }
-
-
