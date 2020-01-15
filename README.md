@@ -1,6 +1,7 @@
 ## **MiniKSMonster**
 Kolloidales Silber Generator</br>
 Bauteile und Platinen: https://www.silbermonster.de/bauteile-platinen/</br>
+Bauteile von Reichelt: https://bit.ly/35Z2m8e</br>
 Bauanleitung: https://www.silbermonster.de/bauanleitung/</br>
 SSD1306Ascii library for small OLED displays: https://github.com/greiman/SSD1306Ascii</br>
 Optiboot Bootloader for Arduino and Atmel AVR https://github.com/Optiboot/optiboot</br>
