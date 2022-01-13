@@ -344,13 +344,9 @@ ISR(TIMER1_COMPA_vect) {                  // Interrupt Routine every 1 sec
 
   if (polwechselzeit != 0) 
     {    
-    if (!(i % (polwechselzeit)))             // Polarity change every 15 sec./ basis time
+    if (!(i % (polwechselzeit)))             // Polarity change
       { polaritaet = !polaritaet;
-        digitalWrite(START, HIGH);
-        delay(500);
         digitalWrite(POLW, polaritaet);
-        delay(500);
-        digitalWrite(START, LOW);
       }
     }
     
