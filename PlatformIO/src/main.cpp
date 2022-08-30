@@ -1,3 +1,14 @@
+/*******************************************
+
+  Name.......:  MiniKSMonster
+  Description:  PlatformIO sketch for the kolloidal silver generator MiniKSMonster, MiniKSMonster is a fork of https://github.com/AgH2O/ks_shield
+  Project....:  https://www.silbermonster.de
+  License....:  This work is licensed under the Creative Commons Attribution-NonCommercial-ShareAlike 3.0 Unported License.
+                To view a copy of this license, visit http://creativecommons.org/licenses/by-nc-sa/3.0/ or send a letter to
+                Creative Commons, 171 Second Street, Suite 300, San Francisco, California, 94105, USA.
+
+********************************************/
+
 // #define MINUTES                        //Uncomment if you want minutes instead of seconds for polarity change
 
 // #define SMD                            //Uncomment if you want SMD-Version
