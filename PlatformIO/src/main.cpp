@@ -1,12 +1,10 @@
 /*******************************************
-
   Name.......:  MiniKSMonster
   Description:  PlatformIO sketch for the kolloidal silver generator MiniKSMonster, MiniKSMonster is a fork of https://github.com/AgH2O/ks_shield
   Project....:  https://www.silbermonster.de
   License....:  This work is licensed under the Creative Commons Attribution-NonCommercial-ShareAlike 3.0 Unported License.
                 To view a copy of this license, visit http://creativecommons.org/licenses/by-nc-sa/3.0/ or send a letter to
                 Creative Commons, 171 Second Street, Suite 300, San Francisco, California, 94105, USA.
-
 ********************************************/
 
 // #define MINUTES                        //Uncomment if you want minutes instead of seconds for polarity change
@@ -16,6 +14,8 @@
 // #define REVERSETOUCH                   //Uncomment if you want DOWN+UP+ENTER instead of UP+DOWN+ENTER
 
 // #define SECONDPOLARITY                 //Uncomment if you want to set the second change polarity time after pole change threshold
+
+#define NIGHTMODE                         //Uncomment if you don't like the bieps in the selection and beep 3 short times instead of 10 times at the end
 
 #include "SSD1306Ascii.h"                 // ascii library for Oled
 #include "SSD1306AsciiAvrI2c.h"
@@ -54,13 +54,11 @@ boolean polaritaet = true;
 boolean wassertest = false;               // water quality test default is disable
 boolean display = true;                   // display enable
 
-char text[32];
-
 unsigned int taste, i, eine_minute, Position, adc_wert, adc_wert_a1;
-unsigned int polwechselzeit = 60;
+unsigned int polwechselzeit = 60;         // example: 60 for hot water, 15 for cold water, 180 if SECONDPOLARITY is on for hot water
 #ifdef SECONDPOLARITY
-unsigned int polwechselzeit2 = 60;
-float polwechselschwelle = 2.5;
+unsigned int polwechselzeit2 = 60;        // example: 60 for hot water, 10 for cold water
+float polwechselschwelle = 2.5;           // example: 2.5 for 5mA generator, 5.0 for 10mA generator
 #endif
 unsigned int bildwechselzeit = 10;
 boolean bildwechsel = true;
@@ -83,8 +81,7 @@ unsigned int intervall = 1;               // measure every 1 sec.
 long unsigned int sek = 0;
 long unsigned int T_remain = 0;
 char stringbuf[16];
-unsigned char stunde; 
-unsigned char minute, sekunde;
+unsigned char stunde, minute, sekunde;
 int b;
 
 unsigned long previousMillis = 0;
@@ -127,7 +124,7 @@ void setup() {
   digitalWrite(POLW, LOW);                // start value low
 
   oled.begin(&Adafruit128x64, I2C_ADDRESS);// setup Oled
-  oled.setContrast(100);                  // contrast adjustment
+  oled.setContrast(100);                  // contrast adjustment (0 - 255 possible)
   oled.clear();
   oled.set2X();
   oled.setFont(X11fixed7x14B);
@@ -295,21 +292,7 @@ float masse2ppm(float masse, float liter) {
   return (masse / (liter * 1000 / 1000000));
 }
 
-void sek2hhmmss(long int zeit) {          // format clock/counter
-  if (zeit > 59) {
-    minute++;
-    sek = 0;
-  }
-  if (minute > 59) {
-    stunde++;
-    minute = 0;
-  }
-  if (stunde > 9) {                       // because 1 digit 9 max.
-    stunde = 0;
-  }
-}
-
-void secondsToHMS( const uint32_t seconds, uint8_t &h, uint8_t &m, uint8_t &s )
+void secondsToHMS( const uint32_t seconds, uint8_t &h, uint8_t &m, uint8_t &s ) // format clock/counter
 {
     uint32_t t = seconds;
 
@@ -458,16 +441,25 @@ void print_loop(boolean screen) {
 }
 
 void biep(void) {
+  #ifndef NIGHTMODE
   tone(AUDIO, 2600);                       // beep
   delay(50);
   noTone(AUDIO);
+  #endif
 }
 
 void biep2(void) {
+  #ifndef NIGHTMODE
   tone(AUDIO, 2600);                       // beep2
   delay(1000);
   noTone(AUDIO);
   delay(400);
+  #else
+  tone(AUDIO, 2600);                       // beep2
+  delay(50);
+  noTone(AUDIO);
+  delay(100);
+  #endif
 }
 
 // *** M A I N L O O P ***
@@ -742,7 +734,11 @@ print_polw1(polwechselzeit);
       oled.print(" mAh       ");
       oled.setCursor(18, 6);              // Oled 4. row
       oled.print("KS fertig");
+      #ifndef NIGHTMODE
       for (b = 1; b <= 10; b++ ) {        // Finished and beep 10 times
+      #else
+      for (b = 1; b <= 3; b++ ) {        // Finished and beep 3 times
+      #endif
         biep2();
       }
       break;
@@ -751,6 +747,6 @@ print_polw1(polwechselzeit);
   do {                                    // Wait loop until any key is pressed
     taste = lese_tasten();
   } while (taste != 4 && taste != 2 && taste != 1);
-  Q_gesamt = 0; i = 0; sek = 0; stunde = 0; minute = 0; zielmasse = 0; masse = 0; display = true; // Reset counter
+  Q_gesamt = 0; i = 0; sek = 0; stunde = 0; minute = 0; sekunde = 0; zielmasse = 0; masse = 0; display = true; // Reset counter
   delay(1000);
 }
