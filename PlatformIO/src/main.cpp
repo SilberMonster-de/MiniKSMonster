@@ -15,7 +15,7 @@
 
 // #define SECONDPOLARITY                 //Uncomment if you want to set the second change polarity time after pole change threshold
 
-#define NIGHTMODE                         //Uncomment if you don't like the bieps in the selection and beep 3 short times instead of 10 times at the end
+// #define NIGHTMODE                         //Uncomment if you don't like the bieps in the selection and beep 3 short times instead of 10 times at the end
 
 #include "SSD1306Ascii.h"                 // ascii library for Oled
 #include "SSD1306AsciiAvrI2c.h"
