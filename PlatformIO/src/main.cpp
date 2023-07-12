@@ -274,7 +274,11 @@ void erste_zeile_clean() {                // Clean first line
 
 void zweiSekunden(void) {                 // 2 sec. delay but reads left and right switch
   for (i = 0; i < 100; i ++)
+    #ifdef REVERSETOUCH
+    if ((lese_tasten() == 4) || (lese_tasten() == 2) )
+    #else
     if ((lese_tasten() == 4) || (lese_tasten() == 1) )
+    #endif
       break;
     else
       delay(20);
@@ -691,7 +695,12 @@ print_polw1(polwechselzeit);
       zweiSekunden();                     // delay against flickering display but read keys
     } while (taste != 4 && taste != 2 && taste != 1); //action if key hit, leave while loop
     biep();
-  } while ( taste != 4 && taste != 2);    // only **not** back, if 4 == go further
+
+    #ifdef REVERSETOUCH
+    } while ( taste != 4 && taste != 1);    // only **not** back, if 4 == go further
+    #else
+    } while ( taste != 4 && taste != 2);    // only **not** back, if 4 == go further
+    #endif
 
   delay(1000);
   print_wassertest();                     // water quality test and Start question
