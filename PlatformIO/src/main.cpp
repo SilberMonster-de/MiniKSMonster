@@ -55,11 +55,15 @@ boolean wassertest = false;               // water quality test default is disab
 boolean display = true;                   // display enable
 
 unsigned int taste, i, eine_minute, Position, adc_wert, adc_wert_a1;
-unsigned int polwechselzeit = 60;         // example: 60 for hot water, 15 for cold water, 180 if SECONDPOLARITY is on for hot water
+
 #ifdef SECONDPOLARITY
+unsigned int polwechselzeit = 180;        // example: 180 for hot water, 15 for cold water
 unsigned int polwechselzeit2 = 60;        // example: 60 for hot water, 10 for cold water
-float polwechselschwelle = 2.5;           // example: 2.5 for 5mA generator, 5.0 for 10mA generator
+float polwechselschwelle = 5.0;           // example: 2.5 for 5mA generator, 5.0 for 10mA generator
+#else
+unsigned int polwechselzeit = 60;         // example: 60 for hot water, 15 for cold water
 #endif
+
 unsigned int bildwechselzeit = 10;
 boolean bildwechsel = true;
 
